@@ -1,3 +1,21 @@
+/*
+ * SYSTEM OVERVIEW
+ * This ESP32 firmware controls the PTA Smart Door access system using RFID,
+ * AS608 fingerprint verification, a touch-exit input, LCD, LEDs, buzzer,
+ * relay/solenoid output, plus optional Blynk and Telegram connectivity.
+ *
+ * Operating flow:
+ * 1. Initialise hardware, display, local data and network services.
+ * 2. Wait for an RFID card, a fingerprint scan, or a touch-exit request.
+ * 3. Check the received identity against the authorised local records.
+ * 4. On success, show the authorised user, unlock the relay/solenoid briefly,
+ *    provide visual/audio feedback, then return the door to its locked state.
+ * 5. On failure, keep the door locked and show access denied feedback.
+ * 6. When configured, Blynk and Telegram support remote monitoring/control.
+ *
+ * SECURITY: Keep Wi-Fi, Blynk and Telegram credentials in a private local copy.
+ */
+
 ﻿// PUBLIC REPOSITORY VERSION
 // Secrets are replaced with placeholders. Configure your local private copy before flashing.
 
