@@ -1,1 +1,60 @@
-# Proteus Smart Door Simulation GuideThis guide explains how to download, run, and test the RFID access-control simulation. It is intended as a learning reference as well as a demonstration record.## 1. Download and open the project1. Open [Litar simulasi Smart Door.pdsprj](Litar%20simulasi%20Smart%20Door.pdsprj) in this repository.2. Select **Raw** or **Download raw file**. If the file opens as text instead of downloading, save it with the original name and the .pdsprj extension.3. Open the saved project in Proteus 8, then select the **Run** button (play icon).> The simulation represents the RFID access flow using an Arduino UNO, virtual terminal, LCD, indicators, buzzer, and relay output.## 2. Start at the ready stateWhen the simulation is running, the LCD shows that the card is ready to be scanned. The black window is the Virtual Terminal, where the RFID UID is entered.![Simulation ready state](proteus-01-ready-state.png)*Figure 1. Initial state: the LCD is ready to receive an RFID card UID.*## 3. Test an authorised UID1. Open [PROTEUS_UID_TESTS.md](PROTEUS_UID_TESTS.md) or the UID note included with the project.2. Copy only the UID, without the user name.3. Click the Virtual Terminal, paste the UID, then press **Enter**.Use E280689401A9 to test the recorded user **ALI**. The LCD confirms access and shows that the door is unlocked.![Access granted for ALI](proteus-02-access-granted-ali.png)*Figure 2. Authorised UID result: access is granted for ALI and the door is unlocked.*## 4. Test an unauthorised UIDEnter 123456789ABC and press **Enter**. This UID is not listed as authorised. The system does not unlock the door and returns to the ready screen.![Access denied result](proteus-03-access-denied.png)*Figure 3. Unauthorised UID result: the LCD returns to the card-ready state.*## UID test reference| UID | Expected result || --- | --- || E280689401A9 | Access Granted; User: ALI; Door: Unlocked || E2000019060C | Access Granted; User: ABU; Door: Unlocked || 123456789ABC | Access denied; LCD returns to Card Ready / Scan Your Card |## What the simulation demonstratesThe simulation follows a simple access-control sequence: receive UID from the Virtual Terminal, compare it with the authorised UID list, then either activate the access output or keep the door locked. LCD text, LEDs, buzzer, and relay state provide visible feedback for each outcome.## Troubleshooting- If the Virtual Terminal does not accept typing, click inside the black window first.- Confirm the simulation is running before entering a UID.- Press **Enter** after pasting the UID.- Enter the UID only; do not include the user's name.
+# Proteus Smart Door Simulation Guide
+
+## Purpose
+
+This document explains how to run and verify the RFID access-control simulation supplied with the PTA Smart Door project. It is written as a concise laboratory guide for demonstration and assessment use.
+
+## Required Files and Software
+
+- [Proteus project: Litar simulasi Smart Door.pdsprj](Litar%20simulasi%20Smart%20Door.pdsprj)
+- [RFID UID test cases](PROTEUS_UID_TESTS.md)
+- Proteus 8 or a compatible installation capable of opening `.pdsprj` projects
+
+## Procedure
+
+### 1. Download the simulation project
+
+1. Open the linked `.pdsprj` file in this repository.
+2. Select **Raw** or **Download raw file** to save the project locally.
+3. Keep the original filename and `.pdsprj` extension.
+4. Open the downloaded file in Proteus.
+
+### 2. Start the simulation
+
+1. Confirm that the project schematic is displayed.
+2. Select the **Run** button (play icon).
+3. Observe the LCD and the Virtual Terminal. The LCD should display the card-ready state, while the Virtual Terminal is used to enter an RFID UID.
+
+### 3. Test authorised access
+
+1. Open the [RFID UID test cases](PROTEUS_UID_TESTS.md).
+2. Copy the UID only; do not copy the user name.
+3. Click inside the Virtual Terminal, paste the UID, and press **Enter**.
+4. Use `E280689401A9` to test the recorded user **ALI**, or `E2000019060C` to test **ABU**.
+5. Verify that the LCD reports access granted and that the access output indicates an unlocked door.
+
+### 4. Test unauthorised access
+
+1. Enter `123456789ABC` in the Virtual Terminal.
+2. Press **Enter**.
+3. Verify that the door remains locked and that the LCD returns to the card-ready state.
+
+## Expected Results
+
+| Test input | Expected LCD / system response |
+| --- | --- |
+| `E280689401A9` | Access granted; user identified as ALI; door unlocked |
+| `E2000019060C` | Access granted; user identified as ABU; door unlocked |
+| `123456789ABC` | Access denied; door remains locked; system returns to card-ready state |
+
+## What the Simulation Demonstrates
+
+The simulation models a basic RFID access-control sequence: the Virtual Terminal receives a UID, the Arduino compares it with the authorised list, and the system either permits or rejects access. The LCD, LEDs, buzzer, and relay output provide observable feedback for the outcome.
+
+## Troubleshooting
+
+- Click inside the Virtual Terminal before pasting a UID.
+- Start the simulation before entering any test value.
+- Press **Enter** after each UID.
+- Enter only the hexadecimal UID; do not include a user name or additional spaces.
+- If the project opens as text in the browser, download it and open it locally in Proteus.
