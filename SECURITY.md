@@ -1,33 +1,33 @@
-# Security and Public Repository Hygiene
+# Keselamatan dan Kebersihan Repositori Awam
 
-This repository documents an academic access-control prototype. Do not treat it as security certification or deployment guidance for a real building.
+Repositori ini mendokumenkan prototaip kawalan akses bagi tujuan akademik. Kandungannya bukan pensijilan keselamatan atau panduan pemasangan untuk bangunan sebenar.
 
-## Never Commit
+## Maklumat yang Tidak Boleh Diterbitkan
 
-- Wi-Fi SSIDs and passwords
-- Blynk template/authentication tokens
-- Telegram bot tokens or chat IDs
-- API keys, passwords, private certificates or recovery codes
-- Real access logs or user-identifying records
-- Unreviewed dashboard screenshots or serial logs
+- SSID dan kata laluan Wi-Fi sebenar
+- ID templat atau token pengesahan Blynk
+- Token bot atau ID sembang Telegram
+- Kunci API, kata laluan, sijil peribadi atau kod pemulihan
+- Log akses sebenar atau rekod yang boleh mengenal pasti pengguna
+- Tangkap layar papan pemuka atau log bersiri yang belum disemak
 
-The published firmware deliberately uses `YOUR_...` placeholders. Keep the working credential copy outside the repository or in an ignored local file.
+Perisian tegar yang diterbitkan menggunakan ruang letak `YOUR_...`. Simpan salinan yang mengandungi maklumat pengesahan sebenar di luar repositori atau dalam fail setempat yang disenaraikan dalam `.gitignore`.
 
-## Before Publishing a Change
+## Semakan Sebelum Menerbitkan Perubahan
 
-1. Review the complete diff, including deleted lines and binary files.
-2. Search text for `password`, `token`, `secret`, `chat_id`, `ssid`, `api_key` and known private values.
-3. Inspect screenshots for names, faces, email addresses, private network information and credentials.
-4. Confirm generated archives do not contain editor backups or local configuration.
-5. Revoke and rotate any credential that was ever pushed; deleting a later commit does not make the old value safe.
+1. Semak keseluruhan perbezaan fail, termasuk baris yang dipadam dan fail binari.
+2. Cari `password`, `token`, `secret`, `chat_id`, `ssid`, `api_key` dan sebarang nilai sulit yang diketahui.
+3. Periksa imej untuk nama, wajah, alamat e-mel, maklumat rangkaian peribadi dan kelayakan sulit.
+4. Pastikan arkib yang dijana tidak mengandungi fail sandaran editor atau konfigurasi setempat.
+5. Batalkan dan ganti sebarang maklumat pengesahan yang pernah diterbitkan. Memadamkannya dalam komit baharu tidak menyingkirkan nilai tersebut daripada sejarah Git.
 
-## Prototype Security Boundaries
+## Batasan Keselamatan Prototaip
 
-- RFID UID comparison is not resistant to cloning.
-- The current Telegram client disables certificate verification with `setInsecure()`.
-- Remote unlock depends on the security of the connected account and token.
-- The design has no door-position, forced-entry or enclosure-tamper sensor.
-- The ten-entry access view is volatile and is not a tamper-resistant audit log.
-- Electrical, egress, fire and fail-safe/fail-secure requirements must be reviewed for any real installation.
+- Padanan UID RFID tidak tahan terhadap peniruan atau pengklonan.
+- Klien Telegram semasa melumpuhkan pengesahan sijil melalui `setInsecure()`.
+- Fungsi buka kunci jarak jauh bergantung pada keselamatan akaun dan token yang disambungkan.
+- Sistem belum mempunyai penderia kedudukan pintu, pembukaan paksa atau usikan bekas.
+- Paparan 10 rekod akses terkini bersifat sementara dan bukan log audit kalis usikan.
+- Keperluan elektrik, laluan keluar kecemasan, kebakaran serta pemilihan *fail-safe* atau *fail-secure* mesti dinilai sebelum sebarang pemasangan sebenar.
 
-Report suspected credential exposure privately and rotate the affected secret immediately. Do not open a public issue containing the secret.
+Laporkan pendedahan maklumat pengesahan secara peribadi dan ganti butiran yang terjejas dengan segera. Jangan buka isu awam yang mengandungi maklumat sulit.
