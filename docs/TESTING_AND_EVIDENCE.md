@@ -1,58 +1,58 @@
-# Testing and Evidence
+# Pengujian dan Bukti
 
-This record separates repository-verifiable evidence from behavior that still needs a dated physical test record.
+Dokumen ini membezakan bukti yang boleh disahkan melalui repositori daripada perkara yang masih memerlukan rekod ujian fizikal bertarikh.
 
-## Evidence Basis
+## Asas Bukti
 
-| Claim | Evidence | Status |
+| Pernyataan | Bukti | Status |
 | --- | --- | --- |
-| RFID grant and denial simulation cases exist | Proteus project, simulation guide and UID matrix | Documented simulation evidence |
-| RFID and fingerprint authentication paths exist | Published firmware | Source verified |
-| Touch exit calls the common grant path | `checkTouch()` in the firmware | Source verified |
-| Relay automatically returns LOW after about five seconds | `DOOR_UNLOCK_TIME = 5000` and `updateDoor()` | Source verified |
-| User records persist | `Preferences` load/save implementation | Source verified |
-| Recent access log is limited to ten entries in RAM | `MAX_LOGS = 10` and in-memory array | Source verified |
-| Local access continues without Wi-Fi/cloud | Hardware loop is independent of background network tasks | Source verified by architecture; physical outage result not recorded here |
-| RC522 and AS608 recovery routines exist | Scheduled RC522 reinitialisation and UART2 re-sync state logic | Source verified |
-| Complete integrated hardware passes all flows | No dated test report or suitable video in repository | Requires user verification |
-| Recovery after brownout/power interruption | No controlled test record in repository | Not verified |
+| Kes simulasi akses RFID dibenarkan dan ditolak tersedia | Projek Proteus, panduan simulasi dan matriks UID | Bukti simulasi didokumenkan |
+| Laluan pengesahan RFID dan cap jari wujud | Perisian tegar yang diterbitkan | Disahkan melalui kod sumber |
+| Penderia sentuh memanggil laluan akses dibenarkan | Fungsi `checkTouch()` | Disahkan melalui kod sumber |
+| Geganti kembali kepada `LOW` selepas kira-kira lima saat | `DOOR_UNLOCK_TIME = 5000` dan `updateDoor()` | Disahkan melalui kod sumber |
+| Rekod pengguna disimpan selepas mula semula | Pelaksanaan muat dan simpan melalui `Preferences` | Disahkan melalui kod sumber |
+| Log terkini terhad kepada 10 entri dalam RAM | `MAX_LOGS = 10` dan tatasusunan dalam memori | Disahkan melalui kod sumber |
+| Akses setempat tidak bergantung pada Wi-Fi atau awan | Gelung perkakasan dipisahkan daripada tugas rangkaian | Disahkan melalui seni bina kod; ujian gangguan fizikal belum direkodkan |
+| Rutin pemulihan RC522 dan AS608 wujud | Permulaan semula RC522 berjadual dan penyegerakan semula UART2 | Disahkan melalui kod sumber |
+| Semua aliran perkakasan bersepadu lulus | Tiada laporan ujian bertarikh atau video yang sesuai | Memerlukan pengesahan pengguna |
+| Pemulihan selepas voltan jatuh atau gangguan kuasa | Tiada rekod ujian terkawal | Belum disahkan |
 
-## Reproducible Proteus RFID Check
+## Semakan RFID Proteus yang Boleh Diulangi
 
-Follow [PROTEUS_SIMULATION_GUIDE.md](PROTEUS_SIMULATION_GUIDE.md) and record the observed result rather than treating the expected result as proof.
+Ikuti [panduan simulasi](PROTEUS_SIMULATION_GUIDE.md) dan catat keputusan yang diperhatikan. Jangan anggap keputusan dijangka sebagai bukti ujian telah lulus.
 
-| Case | Input | Expected result | Repository record |
+| Kes | Input | Keputusan dijangka | Rekod dalam repositori |
 | --- | --- | --- | --- |
-| Authorised user ALI | `E280689401A9` | Access granted and unlock indication | Test vector documented |
-| Authorised user ABU | `E2000019060C` | Access granted and unlock indication | Test vector documented |
-| Unknown card | `123456789ABC` | Access denied and locked state | Test vector documented |
+| Pengguna ALI | `E280689401A9` | Akses dibenarkan dan petunjuk buka kunci | Vektor ujian didokumenkan |
+| Pengguna ABU | `E2000019060C` | Akses dibenarkan dan petunjuk buka kunci | Vektor ujian didokumenkan |
+| Kad tidak dikenali | `123456789ABC` | Akses ditolak dan pintu kekal berkunci | Vektor ujian didokumenkan |
 
-## Recommended Physical Verification Matrix
+## Matriks Pengesahan Fizikal yang Disyorkan
 
-The following is a test plan, not a claim that the tests have passed.
+Jadual berikut ialah pelan ujian, bukan pernyataan bahawa ujian telah lulus.
 
-| Test | Method | Acceptance evidence to capture |
+| Ujian | Kaedah | Bukti penerimaan yang perlu direkodkan |
 | --- | --- | --- |
-| Cold start safe state | Power the complete prototype from off | Relay/lock state, LCD start sequence and serial log |
-| RFID grant | Present enrolled card | User feedback, unlock interval and relock |
-| RFID denial | Present unknown card | Locked state and denied feedback |
-| Fingerprint grant/denial | Use enrolled and unknown fingers | Match result, actuator state and feedback |
-| Touch exit | Trigger TTP223 once and repeatedly | Debounce behavior and five-second relock |
-| Offline local access | Disconnect Wi-Fi before tests | Local paths remain responsive; cloud functions unavailable |
-| Wi-Fi recovery | Restore configured network | Reconnection time and restored Blynk/Telegram state |
-| RC522 interruption | Use a safe, defined lab fault method | Recovery attempt and restored reads without ESP32 restart |
-| AS608 start/recovery | Power-cycle according to a safe test procedure | Bounded retry/re-sync and restored matching |
-| Hostile input/admin flow | Invalid IDs, cancelled enrolment and blocked user | No unintended deletion or unlock |
-| Power interruption | Remove/restore supply under a controlled procedure | Physical lock state, record persistence and clean reboot |
-| Soak test | Run for a defined duration and event count | Reset count, memory trend and missed-event count |
+| Keadaan selamat ketika mula sejuk | Hidupkan prototaip lengkap daripada keadaan tanpa kuasa | Keadaan geganti/kunci, urutan LCD dan log bersiri |
+| Akses RFID dibenarkan | Gunakan kad berdaftar | Maklum balas pengguna, tempoh buka kunci dan kunci semula |
+| Akses RFID ditolak | Gunakan kad tidak dikenali | Keadaan berkunci dan maklum balas penolakan |
+| Cap jari dibenarkan dan ditolak | Gunakan jari berdaftar dan tidak dikenali | Keputusan padanan, keadaan penggerak dan maklum balas |
+| Permintaan keluar | Aktifkan TTP223 sekali dan berulang kali | Tingkah laku nyahlantun dan kunci semula selepas lima saat |
+| Akses setempat luar talian | Putuskan Wi-Fi sebelum ujian | Laluan setempat kekal responsif; fungsi awan tidak tersedia |
+| Pemulihan Wi-Fi | Pulihkan rangkaian yang dikonfigurasi | Masa penyambungan semula dan status Blynk/Telegram |
+| Gangguan RC522 | Gunakan kaedah gangguan makmal yang selamat dan ditetapkan | Percubaan pemulihan dan bacaan pulih tanpa mula semula ESP32 |
+| Permulaan/pemulihan AS608 | Kitar kuasa mengikut prosedur yang selamat | Percubaan terhad, penyegerakan semula dan padanan pulih |
+| Input tidak sah dan aliran pentadbiran | Gunakan ID tidak sah, batalkan pendaftaran dan sekat pengguna | Tiada pemadaman atau buka kunci tanpa kebenaran |
+| Gangguan kuasa | Putus dan pulihkan bekalan secara terkawal | Keadaan kunci fizikal, rekod kekal dan mula semula yang teratur |
+| Ujian operasi jangka panjang | Jalankan untuk tempoh dan bilangan peristiwa yang ditetapkan | Bilangan mula semula, trend memori dan peristiwa terlepas |
 
-## Missing Evidence
+## Bukti yang Masih Diperlukan
 
-- Privacy-reviewed photographs of the physical prototype and lock mechanism.
-- Blynk dashboard and Telegram notification screenshots with identities and tokens removed.
-- A dated integrated-system test log.
-- Measured voltage/current readings and a power budget.
-- A controlled outage/recovery record.
-- A suitable demonstration video.
+- Foto prototaip fizikal dan mekanisme kunci yang telah disemak dari sudut privasi.
+- Tangkap layar Blynk dan Telegram selepas identiti serta token disunting keluar.
+- Log ujian sistem bersepadu yang bertarikh.
+- Ukuran voltan/arus dan belanjawan kuasa.
+- Rekod gangguan serta pemulihan terkawal.
+- Video demonstrasi yang sesuai.
 
-Only add evidence after checking it for names, faces, email addresses, network details, tokens, passwords, chat IDs and other private information.
+Tambahkan bukti hanya selepas menyemaknya untuk nama, wajah, alamat e-mel, maklumat rangkaian, token, kata laluan, ID sembang dan maklumat peribadi lain.
