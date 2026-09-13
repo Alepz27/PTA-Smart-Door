@@ -1,283 +1,110 @@
 # PTA Smart Door
 
-An integrated smart access-control prototype built around an ESP32 DevKit V1. It combines RFID, fingerprint authentication, touch-to-exit, local user records, physical status feedback, a relay-controlled fail-secure solenoid lock, and optional Blynk and Telegram services.
+PTA Smart Door is an ESP32-based access-control prototype developed for engineering learning and academic demonstration. It combines RFID and fingerprint authentication, touch-to-exit operation, local user records, physical status feedback, relay-controlled door locking, and optional Blynk and Telegram services.
 
-> **Scope:** product-oriented functional prototype for learning and academic demonstration. It is not a certified, production-ready security system.
+> **Project scope:** This is a functional academic prototype. It is not a certified or production-ready security system and must not be used as the sole access-control measure for an occupied building.
 
-## At a Glance
+## Project Overview
 
-| Area | Implemented evidence |
+| Area | Current implementation |
 | --- | --- |
-| Controller | ESP32 DevKit V1 firmware in this repository |
-| Entry methods | RC522 RFID and AS608 fingerprint |
+| Main controller | ESP32 DevKit V1 |
+| Entry methods | RC522 RFID and AS608 fingerprint authentication |
 | Exit method | TTP223 touch sensor |
-| Lock actuation | 5 V active-low relay controlling a 12 V fail-secure solenoid lock |
-| Local feedback | LCD1602 I2C, green/red LEDs, active buzzer |
-| Local data | Up to 50 user slots stored with ESP32 Preferences |
-| Connected services | Blynk control/status and Telegram monitoring |
-| Resilience | Local authentication remains active without cloud connectivity; Wi-Fi, RFID and fingerprint recovery logic is present |
-| Evidence | Public-safe firmware, Proteus RFID simulation, recorded UID test matrix and wiring diagram |
+| Lock actuation | 5 V active-low relay controlling a 12 V *fail-secure* solenoid lock |
+| Local feedback | LCD1602 I2C, green and red LEDs, and an active buzzer |
+| User storage | Up to 50 local user slots using ESP32 Preferences |
+| Connected services | Blynk for control and status; Telegram for monitoring |
+| Offline operation | Local authentication remains available without cloud connectivity |
+| Published evidence | Public-safe firmware, Proteus RFID simulation, UID test matrix, and wiring diagram |
 
 ## Problem Statement
 
-A conventional keyed prototype does not demonstrate electronic identity checking, event feedback or connected monitoring. This project explores how one microcontroller can coordinate multiple authentication methods and a physical lock while keeping essential local access available when Internet services are unavailable.
+A conventional mechanical lock does not provide electronic identity verification, event feedback, or connected monitoring. This project investigates how one microcontroller can coordinate several access methods and a physical lock while preserving essential local operation when Internet services are unavailable.
 
-## Project Objectives
+## Objectives
 
-- Integrate RFID, fingerprint and touch-exit inputs on one ESP32.
-- Keep authorised-user decisions local to the device.
-- Drive clear LCD, LED and buzzer feedback for each access outcome.
-- Unlock a fail-secure solenoid through a relay and relock automatically.
-- Add optional monitoring and user-management functions through Blynk and Telegram.
-- Recover from temporary network or reader faults without deliberately restarting the ESP32.
-- Document the prototype so its architecture, constraints and evidence are reviewable.
+- Integrate RFID, fingerprint, and touch-exit inputs on one ESP32.
+- Make access decisions locally rather than relying on a cloud service.
+- Provide clear status feedback through the LCD, LEDs, and buzzer.
+- Control a *fail-secure* solenoid lock through a relay and relock it automatically.
+- Support optional monitoring and user-management functions through Blynk and Telegram.
+- Recover from temporary network or reader faults without intentionally restarting the ESP32.
+- Document the design, evidence, and limitations clearly for technical review.
 
-## Implemented vs Planned
+## Current Scope and Proposed Development
+
+The two columns below deliberately separate implemented functions from proposed work.
 
 | Implemented in the published prototype | Proposed for Smart Door V2 |
 | --- | --- |
-| RFID and fingerprint authentication | Magnetic lock and revised lock-driver stage |
-| TTP223 touch-to-exit | Reed/contact door-state sensing |
-| Local ESP32 Preferences user records | Forced-entry and door-left-open detection |
-| LCD1602, LEDs and buzzer feedback | Colour TFT/IPS interface |
-| Five-second automatic relock | NTP plus RTC-backed timestamps |
-| Blynk status, remote lock control and user actions | Custom mobile application and app permissions |
-| Telegram status, user and recent-log queries | OTA updates and device-health monitoring |
-| Wi-Fi retry/rotation and reader recovery logic | Tamper detection, smarter alerts and optional CCTV event linkage |
-| Ten-entry in-memory access-log view | Persistent, exportable audit storage |
+| RFID and fingerprint authentication | Revised magnetic-lock driver stage |
+| TTP223 touch-to-exit input | Door-position sensing using a reed/contact sensor |
+| Local user records in ESP32 Preferences | Forced-entry and door-left-open detection |
+| LCD1602, LED, and buzzer feedback | Colour TFT/IPS interface |
+| Automatic relocking after five seconds | NTP time with RTC backup |
+| Blynk status, remote lock control, and user actions | Custom mobile application with role-based permissions |
+| Telegram status, user, and recent-log queries | Authenticated OTA updates and device-health monitoring |
+| Wi-Fi retry and reader-recovery logic | Tamper detection and optional CCTV event linkage |
+| Ten recent access events held in RAM | Persistent, exportable audit storage |
 
-Everything in the right column is **future/proposed**, not part of the current build.
+Items in the right-hand column are proposals only. They are not part of the current build.
+
+## System Architecture
+
+| Layer | Elements | Responsibility |
+| --- | --- | --- |
+| Inputs | RC522, AS608, TTP223 | Capture entry credentials and exit requests |
+| Controller | ESP32 access logic, user records, timers, and recovery states | Validate users and coordinate system behaviour |
+| Outputs | LCD, LEDs, buzzer, relay, and solenoid lock | Communicate status and control the physical lock |
+| Optional services | Blynk and Telegram | Provide remote management, status, and notifications |
+
+The ESP32 makes access decisions locally. Blynk and Telegram extend management and visibility but are not required for RFID, fingerprint, or touch-exit operation.
+
+## Operating Sequence
+
+1. On start-up, the firmware sets the relay output to `LOW` and records the door state as locked.
+2. The ESP32 loads saved users and initialises the LCD, SPI, UART, readers, and background network tasks.
+3. The system waits for an RFID card, a fingerprint, or a touch-exit request.
+4. RFID and fingerprint inputs are checked against active local user records. A valid touch input is treated as an internal exit request.
+5. An authorised request activates the relay, green LED, buzzer, and LCD feedback.
+6. After approximately five seconds, `updateDoor()` returns the relay to `LOW` without blocking the main control loop.
+7. A denied request leaves the lock engaged and activates the denial feedback sequence.
+
+### Access Outcomes
+
+| Condition | Lock response | Feedback and record |
+| --- | --- | --- |
+| Active RFID user | Unlocks and then relocks | User and status on LCD; green LED and buzzer; event added to the recent log |
+| Active fingerprint user | Unlocks and then relocks | User and status on LCD; green LED and buzzer; event added to the recent log |
+| Touch-exit request | Unlocks and then relocks | Exit feedback; event recorded as `Exit User` using the `Touch` method |
+| Unknown credential or blocked user | Remains locked | Denial sequence on LCD, red LED, and buzzer; attempt added to the recent log |
+
+### Timing Behaviour
+
+| Function | Firmware value |
+| --- | --- |
+| Automatic relock | `DOOR_UNLOCK_TIME = 5000` ms |
+| Touch-input debounce | `TOUCH_DEBOUNCE = 300` ms |
+| Duplicate RFID suppression | `RFID_REPEAT_BLOCK_TIME = 1200` ms |
+| Enrolment timeout | `ENROLLMENT_TIMEOUT = 30000` ms |
+| Wi-Fi connection timeout | `WIFI_NETWORK_TIMEOUT = 10000` ms |
 
 ## Hardware Components
 
 | Component | Role |
 | --- | --- |
 | ESP32 DevKit V1 | Main controller and network interface |
-| RC522 | RFID card reader over SPI |
-| AS608 | Fingerprint reader over UART2 at 57,600 baud |
+| RC522 | RFID reader connected through SPI |
+| AS608 | Fingerprint reader connected through UART2 at 57,600 baud |
 | TTP223 | Touch-based exit request |
-| LCD1602 I2C | Local prompts and status |
+| LCD1602 I2C | Local prompts and system status |
 | 5 V active-low relay module | Electrical control interface for the lock circuit |
-| 12 V fail-secure solenoid lock | Mechanical locking actuator |
-| Green and red LEDs | Granted/denied status feedback |
+| 12 V *fail-secure* solenoid lock | Mechanical locking actuator |
+| Green and red LEDs | Access-granted and access-denied indicators |
 | Active buzzer | Audible status feedback |
 | LM2596 converter | Voltage step-down for the low-voltage electronics |
 | 12 V adapter | Primary prototype supply |
-
-## Overall System Architecture
-
-```mermaid
-flowchart LR
-    subgraph Inputs["Authentication and exit inputs"]
-        RFID["RC522 RFID"]
-        FP["AS608 fingerprint"]
-        TOUCH["TTP223 touch exit"]
-    end
-
-    subgraph Controller["ESP32 controller"]
-        CORE["Local access-control logic"]
-        USERS["Preferences user records"]
-        LOGS["10-entry memory log"]
-        RECOVERY["Network and sensor recovery"]
-    end
-
-    subgraph Outputs["Physical outputs"]
-        UI["LCD / LEDs / buzzer"]
-        RELAY["Active-low relay"]
-        LOCK["12 V fail-secure solenoid"]
-    end
-
-    subgraph OptionalCloud["Optional connected services"]
-        BLYNK["Blynk dashboard"]
-        TG["Telegram bot"]
-    end
-
-    RFID --> CORE
-    FP --> CORE
-    TOUCH --> CORE
-    USERS <--> CORE
-    CORE --> LOGS
-    RECOVERY --> CORE
-    CORE --> UI
-    CORE --> RELAY --> LOCK
-    CORE <--> BLYNK
-    CORE <--> TG
-```
-
-The ESP32 makes the access decision locally. Blynk and Telegram extend management and visibility, but they are not required for RFID, fingerprint or touch-exit operation.
-
-## How the Smart Door Works
-
-```mermaid
-flowchart TD
-    BOOT["Power on / reset"] --> SAFE["Set relay LOW and door state locked"]
-    SAFE --> INIT["Load users; initialise LCD, SPI, UART and network tasks"]
-    INIT --> READY["Ready for card, finger or touch"]
-    READY --> EVENT{"Input detected?"}
-    EVENT -->|RFID| RFIDFLOW["Read UID and check local record"]
-    EVENT -->|Fingerprint| FPFLOW["Search AS608 template and check local record"]
-    EVENT -->|Touch exit| GRANT["Grant exit request"]
-    EVENT -->|None| HEALTH["Run timers and health checks"] --> READY
-    RFIDFLOW --> RESULT{"Authorised and active?"}
-    FPFLOW --> RESULT
-    RESULT -->|Yes| GRANT
-    RESULT -->|No| DENY["Keep locked; show red / buzzer / LCD feedback"]
-    DENY --> READY
-    GRANT --> UNLOCK["Relay active; green / buzzer / LCD feedback"]
-    UNLOCK --> TIMER["Five-second non-blocking timer"]
-    TIMER --> RELOCK["Relay LOW; return to ready state"] --> READY
-```
-
-### How to Use the Prototype
-
-1. Confirm the lock mechanics, shared grounds and regulated supply connections before applying power.
-2. Power the system. The firmware drives the relay LOW during start-up and loads saved users from ESP32 Preferences.
-3. Wait for the ready display.
-4. Present an enrolled RFID card or enrolled finger for entry, or touch the exit sensor from the protected side.
-5. Observe the LCD, LEDs and buzzer. A granted request energises the unlock path for approximately five seconds; a denied request leaves the door locked.
-6. If Blynk and Telegram have been configured privately, use them for status and management functions described below.
-
-Do not use the prototype as the sole security control for a real occupied space.
-
-## Authentication and Access Behaviour
-
-### RFID Access Flow
-
-```mermaid
-flowchart TD
-    CARD["Card presented"] --> READ["RC522 reads UID"]
-    READ --> VALID{"Read successful?"}
-    VALID -->|No| RECOVER["Retry / scheduled RC522 recovery"] --> READY["Return to ready"]
-    VALID -->|Yes| LOOKUP["Compare UID with local users"]
-    LOOKUP --> MATCH{"Existing active user?"}
-    MATCH -->|Yes| GRANTED["Grant access and log RFID method"]
-    MATCH -->|No| DENIED["Access denied; lock remains engaged"]
-    GRANTED --> WAIT["Block duplicate card briefly"] --> READY
-    DENIED --> WAIT
-```
-
-### Fingerprint Access Flow
-
-```mermaid
-flowchart TD
-    FINGER["Finger detected"] --> IMAGE["Capture and convert image"]
-    IMAGE --> SEARCH["Search AS608 template library"]
-    SEARCH --> FOUND{"Template matched?"}
-    FOUND -->|No| DENY["Denied feedback; door remains locked"]
-    FOUND -->|Yes| USER["Find local user linked to fingerprint ID"]
-    USER --> ACTIVE{"User exists and is active?"}
-    ACTIVE -->|Yes| GRANT["Grant access and log fingerprint method"]
-    ACTIVE -->|No| DENY
-    GRANT --> REMOVE["Wait for finger removal"]
-    DENY --> REMOVE
-    REMOVE --> READY["Return to ready"]
-```
-
-### Touch Exit Flow
-
-The TTP223 input is edge-detected and debounced for 300 ms. A valid touch calls the same granted-access path with the identity `Exit User` and method `Touch`; it does not require RFID or fingerprint authentication because it represents an inside exit request.
-
-```mermaid
-flowchart LR
-    TOUCH["Touch rises HIGH"] --> DEBOUNCE{"300 ms debounce passed?"}
-    DEBOUNCE -->|No| IGNORE["Ignore duplicate"]
-    DEBOUNCE -->|Yes| EXIT["Grant touch exit"]
-    EXIT --> UNLOCK["Unlock for about 5 s"] --> RELOCK["Relock"]
-```
-
-### Authorised vs Denied Access
-
-| Condition | Lock | Feedback | Record |
-| --- | --- | --- | --- |
-| Existing, active RFID user | Unlocks, then relocks | User/status on LCD; green LED and buzzer | Added to recent in-memory log and queued to connected services |
-| Existing, active fingerprint user | Unlocks, then relocks | User/status on LCD; green LED and buzzer | Added to recent in-memory log and queued to connected services |
-| Touch exit | Unlocks, then relocks | Exit/status feedback | Logged as `Exit User` / `Touch` |
-| Unknown credential or blocked user | Remains locked | Denied LCD sequence, red LED and buzzer | Denied attempt enters recent log path |
-
-### Automatic Relocking
-
-The firmware sets `DOOR_UNLOCK_TIME` to 5,000 ms. `updateDoor()` checks the elapsed time without pausing the main control loop, then sets the active-low relay LOW, turns off the green LED, updates the door state and returns the LCD to ready.
-
-## IoT and Background Services
-
-The hardware loop runs separately from background network work. FreeRTOS queues carry hardware commands and status events between the local control logic and Blynk/Telegram tasks.
-
-```mermaid
-flowchart LR
-    subgraph Core1["Core 1: hardware-first loop"]
-        INPUTS["RFID / fingerprint / touch"] --> ACCESS["Access logic"]
-        ACCESS --> OUTPUTS["Relay / LCD / LEDs / buzzer"]
-    end
-
-    subgraph Queues["FreeRTOS queues"]
-        HWQ["Hardware commands"]
-        BQ["Blynk events"]
-        TQ["Telegram events"]
-    end
-
-    subgraph Network["Background connectivity"]
-        WIFI["Wi-Fi retry / selection"]
-        BLYNK["Blynk task"]
-        TG["Telegram task"]
-    end
-
-    ACCESS --> BQ --> BLYNK
-    ACCESS --> TQ --> TG
-    BLYNK --> HWQ --> ACCESS
-    WIFI --> BLYNK
-    WIFI --> TG
-```
-
-### Blynk Integration
-
-The published firmware contains handlers for:
-
-- manual unlock/lock commands;
-- selecting a user slot and displaying its status;
-- adding a user, enrolling RFID or fingerprint, blocking, unblocking and deleting;
-- cancelling an active enrolment;
-- choosing automatic or manual Wi-Fi network selection;
-- displaying door state, access count, system status and recent logs.
-
-Widget/datastream configuration in the Blynk console is not exported in this repository, so a reviewer should not assume the dashboard can be reproduced from firmware alone.
-
-### Telegram Integration
-
-The bot checks the configured chat ID before serving `/users`, `/logs` and `/status`. It also receives queued access and user-management notifications. The current firmware uses `telegramClient.setInsecure()`, which disables TLS certificate verification; this is a known security limitation for a prototype.
-
-### Offline Operation and Reconnection
-
-```mermaid
-stateDiagram-v2
-    [*] --> LocalReady
-    LocalReady --> CloudOnline: Wi-Fi and services connect
-    CloudOnline --> LocalReady: Wi-Fi or cloud disconnects
-    LocalReady --> TryingNetwork: connection timeout
-    TryingNetwork --> LocalReady: next configured network attempted
-    TryingNetwork --> CloudOnline: connection succeeds
-    LocalReady --> LocalReady: RFID / fingerprint / touch remain active
-```
-
-The main loop never depends on Blynk or Telegram to authorise a local credential. The background task rotates through configured Wi-Fi slots after a 10-second connection timeout and separately retries Blynk. Cloud notifications and remote commands are unavailable while disconnected.
-
-## User Management
-
-```mermaid
-flowchart TD
-    SELECT["Select user slot 1-50"] --> ACTION{"Management action"}
-    ACTION -->|Add| NAME["Provide a name"] --> CREATE["Create active local record"]
-    ACTION -->|RFID| RFIDENROLL["Scan card within 30 s"] --> SAVE["Persist record in Preferences"]
-    ACTION -->|Fingerprint| FPENROLL["Capture finger twice within 30 s"] --> SAVE
-    ACTION -->|Block / unblock| STATE["Update active flag"] --> SAVE
-    ACTION -->|Delete| DELETE["Clear local record"] --> SAVE
-    ACTION -->|Cancel| CANCEL["Cleanly leave enrolment mode"]
-```
-
-The local record contains a name, RFID UID, fingerprint template ID, active flag and existence flag. The ESP32 stores the record metadata in Preferences. Fingerprint biometric templates remain in the AS608 sensor; the firmware stores only the linked template ID.
-
-## Access Logging
-
-The current firmware holds the ten most recent formatted events in RAM and exposes them to Blynk/Telegram. This log is **not persistent across an ESP32 restart**, is not an independent audit trail and depends on network time for meaningful timestamps. User records, by contrast, are stored in Preferences.
 
 ## Verified ESP32 Pin Mapping
 
@@ -292,191 +119,150 @@ The current firmware holds the ten most recent formatted events in RAM and expos
 | Red LED | GPIO33 |
 | Active buzzer | GPIO32 |
 
-## Power Architecture
+## Firmware Design
 
-```mermaid
-flowchart LR
-    ADAPTER["12 V adapter"] --> LOCKBRANCH["12 V lock branch"] --> SOLENOID["Fail-secure solenoid"]
-    ADAPTER --> LM["LM2596 step-down"] --> LV["Regulated low-voltage rail"]
-    LV --> ESP32["ESP32 and sensors"]
-    LV --> RELAY["5 V relay module"]
-    ESP32 -->|GPIO26 control| RELAY -->|switches lock circuit| SOLENOID
-```
+- **Hardware-first control loop:** Processes reader input, touch input, output timers, health checks, and queued hardware commands.
+- **Local persistence:** Stores up to 50 user records using ESP32 Preferences.
+- **State-based processing:** Uses bounded states for RFID handling, fingerprint initialisation, authentication, and enrolment.
+- **Task coordination:** Uses FreeRTOS queues and a mutex to coordinate local state with Blynk and Telegram tasks.
+- **Reader recovery:** Schedules RC522 reinitialisation and AS608 UART resynchronisation without intentionally rebooting the ESP32.
+- **Safe start state:** Drives the relay `LOW` and sets `doorUnlocked` to `false` during `setup()`.
 
-This diagram records the component-level power intent from the project hardware list. The repository does not contain a measured power budget or complete terminal-by-terminal power schematic. Before reproducing the build, verify LM2596 output voltage, relay contact rating, solenoid current, flyback suppression, conductor size, shared reference connections and safe isolation.
+### User Records
 
-## Firmware Architecture
+Each local record contains a name, RFID UID, fingerprint-template ID, active flag, and existence flag. Record metadata is stored in ESP32 Preferences. Fingerprint templates remain in the AS608 sensor; the firmware stores only the associated template ID.
 
-- **Hardware-first loop:** processes enrolment timeouts, queued commands, relock/buzzer/LCD timers, reader health, authentication and touch input.
-- **Local persistence:** `Preferences` stores up to 50 user records.
-- **State machines:** RFID, fingerprint initialisation, fingerprint processing and enrolment avoid long blocking sequences in normal operation.
-- **Concurrency:** FreeRTOS queues and a mutex coordinate local state with Blynk and Telegram tasks.
-- **Recovery:** scheduled RC522 reinitialisation and AS608 UART re-synchronisation occur without intentionally rebooting the ESP32.
-- **Safe start state:** the relay is driven LOW and `doorUnlocked` is set false during setup.
+### Access Log
 
-## Reliability and Recovery Behaviour
+The firmware keeps the ten most recent formatted events in RAM for display through Blynk or Telegram. This record is not persistent across an ESP32 restart, is not an independent audit trail, and relies on network time for meaningful timestamps.
 
-Verified from the published firmware:
+## Connected Services
 
-- A failed RC522 initialisation does not trap the controller in an infinite start-up loop; recovery is retried on a schedule.
-- The AS608 receives a delayed start-up handshake, bounded retry logic and UART2 re-synchronisation without resetting the ESP32.
-- Wi-Fi work runs in the background. Local access remains active during disconnection, and configured networks are retried/rotated.
-- Blynk commands cross a queue into the hardware loop instead of directly manipulating hardware from the network callback.
-- On boot/reset, the relay output is set to the locked state and saved user records are reloaded.
+### Blynk
 
-Not yet evidenced in the repository:
+The published firmware includes handlers for:
 
-- controlled brownout or repeated power-interruption tests;
-- measured recovery times across all fault types;
-- long-duration soak testing;
-- verification of the physical lock state for every power-supply failure mode.
+- manual unlock and lock commands;
+- user-slot selection and status display;
+- user creation, RFID or fingerprint enrolment, blocking, unblocking, and deletion;
+- cancellation of an active enrolment process;
+- automatic or manual Wi-Fi network selection; and
+- door state, access count, system status, and recent-log display.
 
-## Engineering Challenges and Lessons Learned
+The Blynk widget and datastream configuration is not included. The dashboard therefore cannot be reproduced from the firmware alone.
 
-These points come from recovery code and fix notes in the published firmware, not invented retrospective claims.
+### Telegram
 
-| Verified issue addressed | Engineering response | Practical lesson |
+The bot validates the configured chat ID before serving `/users`, `/logs`, and `/status`. It also receives queued access and user-management notifications.
+
+The current firmware calls `telegramClient.setInsecure()`, which disables TLS certificate verification. This is a documented prototype limitation and must be corrected before security-sensitive deployment.
+
+### Offline Operation
+
+Local authentication does not depend on Blynk or Telegram. Background tasks rotate through configured Wi-Fi slots after a ten-second connection timeout and retry Blynk separately. Remote commands and cloud notifications are unavailable while the network is disconnected.
+
+## Power and Electrical Notes
+
+The 12 V adapter supplies the solenoid branch and the LM2596 converter. The converter provides the regulated low-voltage rail for the controller, sensors, and relay module.
+
+The repository does not contain a measured power budget or a complete terminal-level electrical schematic. Before reproducing the prototype, verify:
+
+- LM2596 output voltage;
+- relay contact rating;
+- solenoid current;
+- flyback suppression;
+- conductor size;
+- shared ground/reference connections; and
+- appropriate electrical isolation.
+
+![Cirkit Designer wiring reference](docs/Smart-Door-Cirkit-Designer-Wiring.png)
+
+*Figure 1. Existing Cirkit Designer wiring reference. This is not a certified electrical drawing or a measured as-built inspection.*
+
+## Verification Evidence
+
+| Evidence | What it supports | Evidence boundary |
 | --- | --- | --- |
-| RC522 start-up, polling and intermittent reader state | Bounded reads, duplicate-card suppression, health checks and scheduled reinitialisation | Peripheral communication needs observable recovery paths, not only happy-path initialisation |
-| AS608 could be contacted before its UART was ready | Delayed handshake, retry states and host-side UART2 re-sync | Sensors can have different power-up timing from the controller |
-| Network operations could interfere with responsive local hardware | Hardware-first loop, background tasks and event queues | Cloud features should not sit in the critical local access path |
-| Wi-Fi may be unavailable or move between configured networks | Timed connection attempts and multi-network rotation | Self-contained local behaviour improves resilience when infrastructure is unreliable |
-| Enrolment actions can be abandoned or overlap | Mutually exclusive modes, 30-second timeout and explicit cancellation cleanup | Administrative workflows need failure and cancellation states |
-| Shared user state is accessed from multiple tasks | Mutex-protected records and snapshots | Concurrency requires deliberate ownership of mutable state |
+| [Published firmware](firmware/FULL_CODE_SmartDoor_PTA1.ino) | Control paths, timing values, pin assignments, persistence, and recovery logic | Source review does not prove that every path has been tested physically |
+| [Proteus project](docs/Litar%20simulasi%20Smart%20Door.pdsprj) | Repeatable RFID-oriented simulation | Does not model the complete ESP32, AS608, and cloud-connected system |
+| [Simulation guide](docs/PROTEUS_SIMULATION_GUIDE.md) | Repeatable demonstration procedure | Expected outcomes must not be presented as recorded test results |
+| [UID test matrix](docs/PROTEUS_UID_TESTS.md) | Two authorised RFID cases and one unauthorised case | These are simulation inputs, not security-performance measurements |
+| [Wiring diagram](docs/Smart-Door-Cirkit-Designer-Wiring.png) | Component-interconnection reference | Not a certified schematic or physical inspection record |
 
-## Prototype Development Story
+See [Testing and Evidence](docs/TESTING_AND_EVIDENCE.md) for the detailed verification matrix and the evidence that is still required.
 
-The repository evidence supports this progression:
+## Reliability Boundaries
 
-1. **Concept:** electronically controlled door access with local identity checks.
-2. **Initial prototype:** ESP32, relay/solenoid and local feedback components.
-3. **Multi-method authentication:** RC522 RFID and AS608 fingerprint paths, plus touch exit.
-4. **Hardware integration:** verified pin mapping, LCD/LED/buzzer feedback and wiring reference.
-5. **IoT integration:** Blynk management/status and Telegram monitoring.
-6. **Reliability improvements:** hardware-first processing, event queues, Wi-Fi retry and reader recovery states.
-7. **Polished functional prototype:** public-safe firmware, Proteus demonstration material and reviewable documentation.
-8. **Smart Door V2:** proposed sensing, UI, security and maintainability improvements—not implemented.
+The published firmware contains recovery mechanisms for temporary RC522, AS608, Wi-Fi, and Blynk faults. The repository does not yet provide evidence for:
 
-## Testing and Demonstration Evidence
-
-| Evidence | What it supports | Boundary |
-| --- | --- | --- |
-| [Published firmware](firmware/FULL_CODE_SmartDoor_PTA1.ino) | Implemented control paths, timings, pin assignments, persistence and recovery logic | Source review does not prove every path was physically exercised |
-| [Proteus project](docs/Litar%20simulasi%20Smart%20Door.pdsprj) | Reproducible RFID-oriented simulation artifact | Does not model the complete ESP32/AS608/cloud build |
-| [Simulation guide](docs/PROTEUS_SIMULATION_GUIDE.md) | Repeatable demonstration procedure | Expected results should be recorded by each evaluator |
-| [UID test matrix](docs/PROTEUS_UID_TESTS.md) | Two authorised and one unauthorised RFID cases | These are simulation cases, not security-performance measurements |
-| [Wiring diagram](docs/Smart-Door-Cirkit-Designer-Wiring.png) | Component interconnection reference | Not a certified electrical drawing or measured as-built inspection |
-
-See [Testing and Evidence](docs/TESTING_AND_EVIDENCE.md) for the verification matrix and unverified claims.
-
-![Cirkit Designer wiring diagram](docs/Smart-Door-Cirkit-Designer-Wiring.png)
-
-*Figure 1. Existing Cirkit Designer wiring reference. No personal photographs or private dashboard screenshots are included.*
+- controlled brownout or repeated power-interruption testing;
+- measured recovery time for each fault type;
+- long-duration soak testing; or
+- physical lock-state verification for every power-supply failure mode.
 
 ## Security Considerations
 
-- The public firmware contains placeholders, not real Wi-Fi, Blynk or Telegram credentials.
-- Keep private credentials in a local-only configuration and review changes before every push.
-- Telegram TLS certificate verification is disabled in the current firmware and should be corrected before any security-sensitive deployment.
-- RFID UID matching alone is clonable and should not be treated as high-assurance authentication.
-- Remote unlock increases risk: secure the Blynk/Telegram accounts, restrict bot chat IDs and revoke leaked tokens immediately.
-- User names, credential identifiers and access events are sensitive operational data.
-- The prototype lacks tamper sensing, door-position feedback and forced-entry detection.
-- A fail-secure lock and its power arrangement must be assessed for fire, egress and local electrical requirements before real installation.
+- Public firmware uses placeholders instead of real Wi-Fi, Blynk, and Telegram credentials.
+- RFID UID matching is susceptible to cloning and is not high-assurance authentication.
+- Remote unlock depends on the security of the connected accounts, tokens, and authorised chat ID.
+- The prototype has no door-position, forced-entry, or enclosure-tamper sensing.
+- The in-memory access record is neither persistent nor tamper-resistant.
+- Telegram TLS certificate verification is disabled in the current firmware.
+- Fire, emergency-egress, electrical, and *fail-safe*/*fail-secure* requirements must be assessed before any real installation.
 
-See [SECURITY.md](SECURITY.md) for repository hygiene and private configuration guidance.
+See [SECURITY.md](SECURITY.md) for public-repository and credential-handling guidance.
 
 ## Current Limitations
 
-- Academic prototype; no certification, threat assessment or compliance review.
-- No door-position sensor, so software cannot confirm that the door physically closed.
-- No forced-entry, door-left-open or enclosure-tamper detection.
-- Access log is limited to ten RAM entries and is lost after restart.
-- Cloud dashboard configuration is not exported for one-step reproduction.
-- Network timestamps do not have an RTC-backed fallback.
-- Telegram TLS verification is disabled.
-- No documented power budget, battery/UPS protection or controlled power-failure test.
-- Proteus evidence covers an RFID demonstration rather than the complete integrated physical system.
-- No suitable public demo video or privacy-reviewed physical-prototype photographs are currently included.
+- No certification, formal threat assessment, or compliance review.
+- No door-position sensor to confirm that the door has physically closed.
+- No forced-entry, door-left-open, or enclosure-tamper detection.
+- Access history is limited to ten RAM entries and is lost after restart.
+- No exported Blynk dashboard configuration.
+- No RTC-backed time source.
+- No documented power budget, UPS protection, or controlled power-failure test.
+- Proteus evidence covers an RFID demonstration rather than the complete integrated system.
+- No privacy-reviewed prototype photographs or suitable public demonstration video.
 
-## Smart Door V2 — Proposed Roadmap
+## Smart Door V2 Roadmap
 
-```mermaid
-flowchart LR
-    subgraph Field["Proposed field hardware"]
-        AUTH["RFID + higher-capacity fingerprint"]
-        DOOR["Reed/contact door sensor"]
-        TAMPER["Tamper sensing"]
-        TFT["Colour TFT/IPS UI"]
-        MAG["Magnetic lock and protected driver"]
-        CCTV["Optional CCTV event input"]
-    end
-
-    subgraph Control["Proposed controller platform"]
-        POLICY["Risk-aware access policy"]
-        HEALTH["Device and network health"]
-        TIME["NTP + RTC timebase"]
-        OTA["Signed OTA update path"]
-        AUDIT["Persistent audit records"]
-    end
-
-    subgraph App["Proposed application layer"]
-        MOBILE["Custom mobile app"]
-        USERS["Users and permissions"]
-        ALERTS["Door-open / forced-entry alerts"]
-        REMOTE["Controlled remote unlock"]
-    end
-
-    AUTH --> POLICY
-    DOOR --> POLICY
-    TAMPER --> POLICY
-    CCTV -. optional .-> POLICY
-    POLICY --> MAG
-    POLICY --> TFT
-    TIME --> AUDIT
-    HEALTH --> ALERTS
-    POLICY --> AUDIT
-    MOBILE <--> USERS
-    MOBILE <--> ALERTS
-    MOBILE <--> REMOTE --> POLICY
-    OTA --> HEALTH
-```
-
-| Current limitation | Proposed engineering improvement | Expected benefit |
+| Current limitation | Proposed improvement | Intended benefit |
 | --- | --- | --- |
-| Lock command is not confirmed by door position | Add reed/contact sensor | Detect door open/closed state and door-left-open events |
-| No forced-entry signal | Compare contact state with authorised unlock state | Flag unexpected opening |
-| Limited character LCD | Add colour TFT/IPS and structured local UI | Clearer prompts and maintenance status |
-| Network-only accurate time | Add RTC backed by NTP synchronisation | More reliable event timestamps during outages |
-| Volatile recent logs | Add bounded persistent/exportable audit storage | Better traceability across restarts |
-| Dashboard-dependent administration | Build a custom authenticated app with roles/permissions | More controlled user management |
-| No update mechanism | Add authenticated/signed OTA workflow with rollback | Maintainability without weakening firmware trust |
-| No tamper awareness | Add enclosure and wiring tamper inputs | Earlier warning of physical interference |
-| Single-method entry per event | Evaluate risk-based multi-factor authentication | Higher assurance for selected situations |
+| Lock command is not confirmed by door position | Add a reed/contact sensor | Detect open, closed, and door-left-open states |
+| No forced-entry signal | Compare door state with authorised unlock state | Identify unexpected opening |
+| Limited character display | Add a colour TFT/IPS interface | Improve prompts and maintenance information |
+| Network-dependent timestamps | Add an RTC synchronised through NTP | Preserve useful timestamps during outages |
+| Volatile recent logs | Add bounded persistent and exportable storage | Improve traceability across restarts |
+| Dashboard-dependent administration | Develop an authenticated application with roles | Improve control of user-management privileges |
+| No firmware-update mechanism | Add authenticated or signed OTA updates with rollback | Improve maintainability without weakening trust |
+| No tamper awareness | Add enclosure and wiring-tamper inputs | Provide earlier warning of physical interference |
+| Single credential per access event | Evaluate risk-based multi-factor authentication | Increase assurance where required |
+
+These items remain proposals and must not be described as implemented features.
 
 ## Repository Structure
 
 ```text
 PTA-Smart-Door/
-├── README.md
-├── SECURITY.md
-├── firmware/
-│   └── FULL_CODE_SmartDoor_PTA1.ino
-└── docs/
-    ├── Litar simulasi Smart Door.pdsprj
-    ├── PROTEUS_SIMULATION_GUIDE.md
-    ├── PROTEUS_UID_TESTS.md
-    ├── Smart-Door-Cirkit-Designer-Wiring.png
-    └── TESTING_AND_EVIDENCE.md
+|-- README.md
+|-- SECURITY.md
+|-- firmware/
+|   `-- FULL_CODE_SmartDoor_PTA1.ino
+`-- docs/
+    |-- Litar simulasi Smart Door.pdsprj
+    |-- PROTEUS_SIMULATION_GUIDE.md
+    |-- PROTEUS_UID_TESTS.md
+    |-- Smart-Door-Cirkit-Designer-Wiring.png
+    `-- TESTING_AND_EVIDENCE.md
 ```
 
 ## Project Resources
 
-- [Arduino firmware](firmware/FULL_CODE_SmartDoor_PTA1.ino) — public-safe credential placeholders.
+- [Arduino firmware](firmware/FULL_CODE_SmartDoor_PTA1.ino) — contains public-safe credential placeholders.
 - [Proteus simulation guide](docs/PROTEUS_SIMULATION_GUIDE.md)
 - [RFID UID test cases](docs/PROTEUS_UID_TESTS.md)
 - [Cirkit Designer project](https://app.cirkitdesigner.com/project/c76d481d-00aa-41fe-8f70-778ca7574145)
 
-## Practical Learning Demonstrated
+## Demonstrated Learning
 
-This project provides hands-on exposure to embedded I/O, SPI/I2C/UART peripherals, multi-method access logic, non-volatile records, state machines, FreeRTOS task coordination, IoT service integration, fault recovery, troubleshooting and engineering documentation. These are practical learning outcomes from a functional prototype, not claims of expert-level or production-security experience.
+The project demonstrates practical work with embedded C++, SPI/I2C/UART peripherals, local persistence, state-based control, FreeRTOS task coordination, IoT integration, fault recovery, troubleshooting, and engineering documentation. These are learning outcomes from a functional prototype, not claims of production-security expertise.
