@@ -1,23 +1,22 @@
-# Kes Ujian UID RFID
+# RFID UID Test Cases
 
-## Tujuan
+## Purpose
 
-Rujukan ini merekodkan nilai RFID yang digunakan untuk menyemak simulasi Smart Door dalam Proteus. Masukkan setiap UID dalam *Virtual Terminal* tepat seperti yang ditunjukkan.
+This reference records the RFID values used to verify the Smart Door Proteus simulation. Each test case should be entered in the Virtual Terminal exactly as shown.
 
-## Matriks Ujian
+## Test Matrix
 
-| UID RFID | Status kebenaran | Keputusan dijangka |
+| RFID UID | Authorisation status | Expected result |
 | --- | --- | --- |
-| `E280689401A9` | Dibenarkan | Akses dibenarkan; nama ALI dipaparkan; pintu dibuka |
-| `E2000019060C` | Dibenarkan | Akses dibenarkan; nama ABU dipaparkan; pintu dibuka |
-| `123456789ABC` | Tidak dibenarkan | Akses ditolak; pintu kekal berkunci; sistem kembali ke keadaan sedia |
+| `E280689401A9` | Authorised | Access granted; user displayed as ALI; door unlocked |
+| `E2000019060C` | Authorised | Access granted; user displayed as ABU; door unlocked |
+| `123456789ABC` | Unauthorised | Access denied; door remains locked; system returns to card-ready state |
 
-## Cara Menggunakan Rujukan Ini
+## How to Use This Reference
 
-1. Jalankan simulasi Proteus.
-2. Salin satu UID daripada jadual tanpa teks lain.
-3. Tampalkan UID ke dalam *Virtual Terminal*.
-4. Tekan **Enter** dan bandingkan respons yang diperhatikan dengan keputusan dijangka.
-5. Catat keputusan sebenar secara berasingan; jadual di atas bukan rekod keputusan ujian yang telah dilaksanakan.
+1. Run the Proteus simulation.
+2. Copy one UID from the table, without the name or expected-result text.
+3. Paste the UID into the Virtual Terminal.
+4. Press **Enter** and compare the observed response with the expected result.
 
-Lihat [Panduan Simulasi Smart Door Menggunakan Proteus](PROTEUS_SIMULATION_GUIDE.md) untuk arahan lengkap.
+For complete setup instructions, see the [Proteus Smart Door Simulation Guide](PROTEUS_SIMULATION_GUIDE.md).
