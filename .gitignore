@@ -1,0 +1,20 @@
+# Private configuration and credentials
+.env
+.env.*
+!.env.example
+credentials.h
+credentials.hpp
+secrets.h
+secrets.hpp
+
+# Local editor/build output
+.vscode/
+.idea/
+*.bin
+*.elf
+*.map
+build/
+
+# Logs and archives may contain private data
+*.log
+*.zip
